@@ -39,6 +39,10 @@
 
 **10.** Calculate the total amount of precipitation for stations during the trip.
 
+**11.** Build the API app using Flask.
+
+![](Images/general_route.png)
+
 ### III. Optional Challenge Assignment ###
 
 **1.** Calculate the temperature of min, max, avg through function **daily_normals()** for dates of trip throughout years.
