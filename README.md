@@ -3,6 +3,7 @@
 ## I. Climate Analysis and Exploration ##
 
 **1.** Using **automap_base()** in SQLAlchemy to create table columns, then save the references into tables.
+
 **2.** Connect the database to pandas using **SQLAlchemy** through **create_engine(), session**.
 
 ## II. Exploration Data and Analysis ##
