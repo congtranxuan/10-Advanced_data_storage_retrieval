@@ -21,7 +21,7 @@
  
 **4.** The summary statistics for the precipitation data
 
-![](Images/describe.png)
+![](Images/Describe.png)
 
 **5.** Get the station list of temperature observations.
 
