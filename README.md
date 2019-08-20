@@ -39,7 +39,7 @@
 
 **10.** Calculate the total amount of precipitation for stations during the trip.
 
-**11.** Build the API app using Flask.
+**11.** Build the API app using Flask in the file "app.py".
 
 ![](Images/general_route.png)
 
