@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -6,12 +7,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 from flask import Flask, jsonify
 
-import os
+import datetime as dt
+from datetime import datetime
+from datetime import date
 
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///hawaii.sqlite")
+engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -23,59 +26,111 @@ Base.classes.keys()
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 
-session = Session(engine)
-session.query(Measurement)
-for data in Measurement:
-    print(data)
 
-# app = Flask(__name__)
+app = Flask(__name__)
 
 # #################################################
 # # Flask Routes
 # #################################################
 
-# @app.route("/")
-# def Welcome():
-#     return(
-#         "/api/v1.0/precipitation"
-#             "Convert the query results to a Dictionary using date as the key and prcp as the value."
-#             "Return the JSON representation of your dictionary."
+@app.route("/")
+def Welcome():
+    return(
+        f"/api/v1.0/precipitation<br/>"
+            "Convert the query results to a Dictionary using date as the key and prcp as the value.<br/>"
+            "Return the JSON representation of your dictionary.<br/>"
         
-#         "/api/v1.0/stations"
-#             "Return a JSON list of stations from the dataset."
+        f"/api/v1.0/stations<br/>"
+            "Return a JSON list of stations from the dataset.<br/>"
        
-#         "/api/v1.0/tobs"
-#             "Query for the dates and temperature observations from a year from the last data point."
-#             "Return a JSON list of Temperature Observations (tobs) for the previous year."
+        f"/api/v1.0/tobs<br/>"
+            "Query for the dates and temperature observations from a year from the last data point.<br/>"
+            "Return a JSON list of Temperature Observations (tobs) for the previous year.<br/>"
         
-#         "/api/v1.0/<start> and /api/v1.0/<start>/<end>"
-#             "The date should be under form YYYY-mm-dd"
-#             "Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range."
-#             "When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date."
-#             "When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive."
-#     )
+        f"/api/v1.0/start and /api/v1.0/start/end<br/>"
+            "The date should be under form YYYY-mm-dd<br/>"
+            "Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.<br/>"
+            "When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.<br/>"
+            "When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.<br/>"
+    )
 
-# @app.route("/api/v1.0/precipitation")
-# def precipitation():
-#     session = Session(engine)
-#     session.close()
-#     return( )
+@app.route("/api/v1.0/precipitation")
+def precipitation():
+    session = Session(engine)
+    results = session.query(Measurement.date, Measurement.prcp).all()
+    session.close()
+    data_dict = []
+    for data in results:
+        newdict = {data[0]:data[1]}
+        data_dict.append(newdict)
+    return(jsonify(data_dict))
 
-# @app.route("/api/v1.0/stations")
-# def stations():
-#     return()
+@app.route("/api/v1.0/stations")
+def stations():
+    session = Session(engine)
+    results = session.query(Station.station).all()
+    session.close()
+    station = list(np.ravel(results))
+    return(jsonify(station))
+    
 
+@app.route("/api/v1.0/tobs")
+def tobs():
+    session = Session(engine)
+    last_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()[0]
+    from_date = datetime.strptime(str(last_date),"%Y-%m-%d") - dt.timedelta(days=365)
+    one_year_tobs = session.query(Measurement.date, Measurement.tobs).\
+    filter(Measurement.date >= from_date.strftime("%Y-%m-%d")).all()
+    session.close()
+    data_dict = []
+    for data in one_year_tobs:
+        newdict = {data[0]:data[1]}
+        data_dict.append(newdict)
+    return(jsonify(data_dict))
+   
+@app.route("/api/v1.0/<start>")
+def start_func(start):
+    start = start.replace("<","")
+    start = start.replace(">","")
+    session = Session(engine)
+    date_list = session.query(Measurement.date).all()
+    datelist = list(np.ravel(date_list))
+    if start in datelist:
+        results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).all()
+        session.close()
+        result = list(np.ravel(results))
+        return(jsonify(result))
+    else:
+        session.close() 
+        return(jsonify({"error": f"The date entered is not valid."}), 404)
 
-# @app.route("/api/v1.0/tobs")
-# def tobs():
-#     return()
+@app.route("/api/v1.0/<start>/<end>")
+def start_end_func(start,end):
+    start = start.replace("<","")
+    start = start.replace(">","")
 
-# @app.route("/api/v1.0/<start>")
-# def start():
-#     return()
+    end = end.replace("<","")
+    end = end.replace(">","")
 
-# @app.route("/api/v1.0/<start>/<end>")
-# def start_end():
-#     return()
-# if __name__ == '__main__':
-#     app.run(debug=True)
+    session = Session(engine)
+    date_list = session.query(Measurement.date).all()
+    datelist = list(np.ravel(date_list))
+    if (start and end) in datelist:
+        results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).filter(Measurement.date <= end).all()
+        session.close()
+        result = list(np.ravel(results))
+        return(jsonify(result))
+    elif start in datelist:
+        results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).all()
+        session.close() 
+        result = list(np.ravel(results))
+        return jsonify({"1 error": "The end date is not valid.","2 the results":"It is calculated within start date to most recent valid date","3 tmin":result[0],"4 tavg":result[1],"5 tmax":result[2]}), 404
+    else: 
+        session.close() 
+        return(jsonify({"error": f"The dates entered are not valid."}), 404)
+    
+if __name__ == '__main__':
+    app.run(debug=True)
