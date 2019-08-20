@@ -1,12 +1,13 @@
+#Import dependencies
 import numpy as np
 import pandas as pd
-
+#Import SqlAlchemy
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 from flask import Flask, jsonify
-
+#Import datetime
 import datetime as dt
 from datetime import datetime
 from datetime import date
@@ -36,22 +37,30 @@ app = Flask(__name__)
 @app.route("/")
 def Welcome():
     return(
-        f"/api/v1.0/precipitation<br/>"
-            "Convert the query results to a Dictionary using date as the key and prcp as the value.<br/>"
-            "Return the JSON representation of your dictionary.<br/>"
-        
-        f"/api/v1.0/stations<br/>"
-            "Return a JSON list of stations from the dataset.<br/>"
-       
-        f"/api/v1.0/tobs<br/>"
-            "Query for the dates and temperature observations from a year from the last data point.<br/>"
-            "Return a JSON list of Temperature Observations (tobs) for the previous year.<br/>"
-        
-        f"/api/v1.0/start and /api/v1.0/start/end<br/>"
-            "The date should be under form YYYY-mm-dd<br/>"
-            "Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.<br/>"
-            "When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.<br/>"
-            "When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.<br/>"
+        f"<b>../api/v1.0/precipitation</b><br/>"
+            "<ul>"
+            "<li>Convert the query results to a Dictionary using date as the key and prcp as the value.</li><br/>"
+            "<li>Return the JSON representation of your dictionary.</li><br/>"
+            "</ul>"
+            "<br>"
+        f"<b>../api/v1.0/stations</b><br/>"
+            "<ul>"
+            "<li>Return a JSON list of stations from the dataset.</li><br/>"
+            "</ul>"
+            "<br>"
+        f"<b>../api/v1.0/tobs</b><br/>"
+            "<ul>"
+            "<li>Query for the dates and temperature observations from a year from the last data point.</li><br/>"
+            "<li>Return a JSON list of Temperature Observations (tobs) for the previous year.</li><br/>"
+            "</ul>"
+            "<br>"
+        f"<b>../api/v1.0/start and /api/v1.0/start/end</b><br/>"
+            "<ul>"
+            "<li>The date should be as form YYYY-mm-dd.</li><br/>"
+            "<li>Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.</li><br/>"
+            "<li>When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.</li><br/>"
+            "<li>When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.</li><br/>"
+            "</ul>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -100,7 +109,7 @@ def start_func(start):
         filter(Measurement.date >= start).all()
         session.close()
         result = list(np.ravel(results))
-        return(jsonify(result))
+        return(jsonify({"1 tmin": result[0],"2 tavg":result[1], "3 tmax": result[2]}))
     else:
         session.close() 
         return(jsonify({"error": f"The date entered is not valid."}), 404)
@@ -116,12 +125,12 @@ def start_end_func(start,end):
     session = Session(engine)
     date_list = session.query(Measurement.date).all()
     datelist = list(np.ravel(date_list))
-    if (start and end) in datelist:
+    if (start in datelist) and (end in datelist):
         results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
         filter(Measurement.date >= start).filter(Measurement.date <= end).all()
         session.close()
         result = list(np.ravel(results))
-        return(jsonify(result))
+        return jsonify({"1 tmin": result[0],"2 tavg":result[1], "3 tmax": result[2]})
     elif start in datelist:
         results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
         filter(Measurement.date >= start).all()
